@@ -118,13 +118,13 @@ namespace RetroSpy
         }
 
         private void UpdatePortListThread()
+        {
+            if (letUpdatePortThreadRun)
             {
-                if (letUpdatePortThreadRun)
-                {
-                    Thread thread = new(UpdatePortList);
-                    thread.Start();
-                }
+                Thread thread = new(UpdatePortList);
+                thread.Start();
             }
+        }
 
         [Obsolete("GetPath is obsolete as it is not compatible with mobile platforms")]
         public async Task<string?> GetPath()
@@ -368,6 +368,10 @@ namespace RetroSpy
                     {
                         UpdateMayflashList();
                     }
+                    else if (_vm.Sources.SelectedItem == InputSource.RAPHNETRAW)
+                    {
+                        UpdateRaphnetList();
+                    }
                     //else if (_vm.Sources.SelectedItem == InputSource.XBOX)
                     //{
                     //    updateBeagleList();
@@ -395,12 +399,12 @@ namespace RetroSpy
                 if (skipSetup)
                 {
                     startsource = startsource?.Replace("\"", "");
-                    if(startsource != null && SourcesComboBox != null)
+                    if (startsource != null && SourcesComboBox != null)
                     {
                         int i;
                         for (i = 0; i < SourcesComboBox.Items.Count; ++i)
                         {
-                            if(_vm.Sources[i].Name == startsource)
+                            if (_vm.Sources[i].Name == startsource)
                                 break;
                         }
 
@@ -505,8 +509,8 @@ namespace RetroSpy
 
             try
             {
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) 
-                    && RuntimeInformation.OSArchitecture == Architecture.X64 
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+                    && RuntimeInformation.OSArchitecture == Architecture.X64
                     && Properties.Settings.Default.UseVJoy)
                     vJoyInterface.InitVJoy();
 
@@ -516,7 +520,7 @@ namespace RetroSpy
                     if (_vm.Sources.SelectedItem.BuildReader != null)
                         reader = _vm.Sources.SelectedItem.BuildReader(_vm.XIAndGamepad.SelectedItem.ToString(CultureInfo.CurrentCulture), false);
                 }
-                else if (_vm.Sources.SelectedItem == InputSource.PC360 || _vm.Sources.SelectedItem == InputSource.DOLPHIN)
+                else if (_vm.Sources.SelectedItem == InputSource.PC360 || _vm.Sources.SelectedItem == InputSource.DOLPHIN || _vm.Sources.SelectedItem == InputSource.RAPHNETRAW)
                 {
                     if (_vm.Sources.SelectedItem.BuildReader != null)
                         reader = _vm.Sources.SelectedItem.BuildReader(_vm.XIAndGamepad.SelectedItem.ToString(CultureInfo.CurrentCulture), false);
@@ -622,15 +626,15 @@ namespace RetroSpy
 
             foreach (InputSource source in InputSource.GetAllSources())
             {
-                if (!_excludedSources.Contains(source.Name) 
-                    && !(source.UseUSB2 == 0 && _vm.UseUSB2 == true) 
+                if (!_excludedSources.Contains(source.Name)
+                    && !(source.UseUSB2 == 0 && _vm.UseUSB2 == true)
                     && !(source.UseUSB2 == 1 && _vm.UseUSB2 == false)
                     && !(source.UseUSB2 == 4 && string.IsNullOrEmpty(Environment.GetEnvironmentVariable("VisionTester"))))
                 {
                     prunedSources.Add(source);
                 }
             }
-         
+
             _vm.Sources.UpdateContents(prunedSources);
         }
 
@@ -706,7 +710,7 @@ namespace RetroSpy
         }
 
 
-    private void DelayTextBox_KeyUp(object sender, KeyEventArgs e)
+        private void DelayTextBox_KeyUp(object sender, KeyEventArgs e)
         {
             if (String.IsNullOrEmpty(((TextBox)sender).Text))
             {
@@ -758,11 +762,13 @@ namespace RetroSpy
                 UpdateGamepadList();
                 UpdateXIList();
                 UpdateEmulatorList();
+                UpdateRaphnetList();
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
                 UpdateMayflashList();
                 UpdateJoystickList();
+                UpdateRaphnetList();
             }
             UpdatePortListThread();
             UpdateBeagleList();
@@ -1055,6 +1061,11 @@ namespace RetroSpy
         {
             List<int> controllerList = new() { 1, 2, 3, 4 };
             _vm.XIAndGamepad.UpdateContents(controllerList);
+        }
+
+        private void UpdateRaphnetList()
+        {
+            _vm.XIAndGamepad.UpdateContents(RaphnetRawReader.GetDevices());
         }
 
         private void UpdateGamepadList()
